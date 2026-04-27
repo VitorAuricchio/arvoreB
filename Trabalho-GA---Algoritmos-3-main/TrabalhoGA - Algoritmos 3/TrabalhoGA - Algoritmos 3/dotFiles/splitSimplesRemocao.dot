@@ -1,0 +1,8 @@
+digraph ArvoreB {
+  node [shape=record];
+  node0000024F96FB10F0 [label="<f0> 40"];
+  node0000024F96FB10F0 -> node0000024F96FB1090;
+  node0000024F96FB1090 [label="<f0> 30"];
+  node0000024F96FB10F0 -> node0000024F96FB0C10;
+  node0000024F96FB0C10 [label="<f0> 50 | <f1> 60"];
+}

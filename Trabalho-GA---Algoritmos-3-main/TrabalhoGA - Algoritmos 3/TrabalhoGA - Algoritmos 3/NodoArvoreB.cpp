@@ -1,0 +1,360 @@
+#include "NodoArvoreB.h"
+
+NodoArvoreB::NodoArvoreB(int ordemDaArvore, bool NodoIsFolha) {
+	ordem = ordemDaArvore;
+	isFolha = NodoIsFolha;
+
+	chaves = new int[(2 * ordem) + 1]; //+1 pra suportar o overflow temporário durante a inserção
+	filhos = new NodoArvoreB * [(2 * ordem) + 2];
+
+	qtdChavesAtuais = 0;
+
+}
+
+NodoArvoreB* NodoArvoreB::buscar(int chaveDesejada) {
+	int i = 0;
+	while (i < qtdChavesAtuais && chaveDesejada > chaves[i]) {
+		i++;
+	}
+
+	if (i < qtdChavesAtuais && chaves[i] == chaveDesejada) {
+		return this; // A chave foi encontrada neste nodo
+	}
+
+	if (isFolha == true) {
+		return nullptr; //chegou no fim e não encontrou a chave;
+	}
+
+	return filhos[i]->buscar(chaveDesejada); // Continua a busca no filho apropriado
+}
+
+void NodoArvoreB::imprimirEmOrdem() {
+	int i;
+	for (i = 0; i < qtdChavesAtuais; i++) { //antes de imprimir a chave atual, visita todos os seus filhos menores e imprime eles
+		if (isFolha == false) { //caminhamento em ordem imprime em ordem crescente
+			filhos[i]->imprimirEmOrdem();
+		}
+		cout << chaves[i] << " "; 
+	}
+	// Imprime o último filho à direita
+	if (isFolha == false) {
+		filhos[i]->imprimirEmOrdem();
+	}
+}
+
+void NodoArvoreB::imprimirPreOrdem() { //imprime a arvore de cima pra baixo, ou seja, primeiro imprime a chave do nodo, depois os filhos da esquerda pra direita
+	for (int i = 0; i < qtdChavesAtuais; i++) { 
+		cout << chaves[i] << " ";
+	}
+	cout << endl;
+
+	if (isFolha == false) { 
+		for (int i = 0; i <= qtdChavesAtuais; i++) { 
+			filhos[i]->imprimirPreOrdem(); 
+		}
+	}
+}
+
+void NodoArvoreB::imprimirPosOrdem() { //imprime a arvore de baixo pra cima, ou seja, primeiro imprime os filhos da esquerda pra direita, depois a chave do nodo
+	if (isFolha == false) { 
+		for (int i = 0; i <= qtdChavesAtuais; i++) {
+			filhos[i]->imprimirPosOrdem();
+		}
+	}
+	for (int i = 0; i < qtdChavesAtuais; i++) {
+		cout << chaves[i] << " ";
+	}
+	cout << endl;
+}
+void NodoArvoreB::gerarDotPreOrdem(ofstream& arquivoDot) {
+	//desenha a caixa deste nodo
+	arquivoDot << "  node" << this << " [label=\"";
+	for (int i = 0; i < qtdChavesAtuais; i++) {
+		arquivoDot << "<f" << i << "> " << chaves[i];
+		if (i < qtdChavesAtuais - 1) {
+			arquivoDot << " | ";
+		}
+	}
+	arquivoDot << "\"];" << endl;
+
+	//desenha as setas e manda os filhos se desenharem
+	if (isFolha == false) {
+		for (int i = 0; i <= qtdChavesAtuais; i++) {
+			if (filhos[i] != nullptr) {
+				arquivoDot << "  node" << this << " -> node" << filhos[i] << ";" << endl;
+				filhos[i]->gerarDotPreOrdem(arquivoDot);
+			}
+		}
+	}
+}
+
+void NodoArvoreB::inserirNoNodoNaoCheio(int novaChave) {
+	int i = qtdChavesAtuais - 1;
+
+	if (isFolha == true) {
+		while (i >= 0 && chaves[i] > novaChave) { //vasculha o array de trás pra frente
+			chaves[i + 1] = chaves[i]; //empurrando os números maiores que a chave para a direita
+			i--; //quando achar um número menor, para de empurrar e insere a nova chave na posição correta
+		}
+		chaves[i + 1] = novaChave; //aqui insere a nova chave
+		qtdChavesAtuais++;
+	}
+	else {
+		while (i >= 0 && chaves[i] > novaChave) {
+			i--; //mesma logica de cima, percorre a array de trás pra frente
+		}
+		i++;
+
+		//manda o filho inserir
+		filhos[i]->inserirNoNodoNaoCheio(novaChave); //como filhos[] e n+1, o i++ acessa o filho correto
+													 //exemplo, num array de 10,20, se tentar colocar 25, o i do array vai ser 1, i++ acessa filhos [2], que e o filho de 20
+
+		//se após inserir o filho passou do limite, quebra ele!
+		if (filhos[i]->qtdChavesAtuais > 2 * ordem) {
+			dividirFilhoCheio(i, filhos[i]); //chama a divisao
+		}
+	}
+}
+
+void NodoArvoreB::dividirFilhoCheio(int indiceDoFilho, NodoArvoreB* filho) {
+	//essa função e executada pelo pai, o pai olha para o filho e ve que ele estourou o numero de chaves
+	//o pai vai fatiar o filho no meio, criar um novoIrmao pra ficar com a metade da direita e puxar a chave central pra ele mesmo
+
+	NodoArvoreB* novoIrmao = new NodoArvoreB(filho->ordem, filho->isFolha); //o pai cria o novo irmao
+	int meio = filho->qtdChavesAtuais / 2;
+	novoIrmao->qtdChavesAtuais = filho->qtdChavesAtuais - meio - 1; //calculamos com base no que o nodo realmente tem no momento
+
+	for (int j = 0; j < novoIrmao->qtdChavesAtuais; j++) {//o limite do for deve ser o que o novo irmão consegue carregar, não a ordem da árvore
+		novoIrmao->chaves[j] = filho->chaves[meio + 1 + j]; //o novo irmao recebe a metade da direita do filho, que comeca no numero sequencia do meio mais 1, depois ele soma j pra ir pegando os próximos
+	}
+
+	if (filho->isFolha == false) { //transfere os filhos para o irmao, se nao for folha
+		for (int j = 0; j <= novoIrmao->qtdChavesAtuais; j++) { //o limite do for deve ser o que o novo irmão consegue carregar, não a ordem da árvore
+			novoIrmao->filhos[j] = filho->filhos[meio + 1 + j]; //e colocar na caixa de enderecos do novo irmao, que agora guarda a metade da direita e seus filhos
+		}
+	}
+
+	filho->qtdChavesAtuais = meio; //o nó original fica apenas com a parte esquerda, que vai exatamente do início até o índice anterior ao meio
+
+	for (int j = qtdChavesAtuais; j >= indiceDoFilho + 1; j--) { //o pai precisa abrir espaço para o novo irmao, ele empurra os filhos pra direita
+		filhos[j + 1] = filhos[j]; //coloca o novo irmao na posicao do filho + 1, e o filho que foi dividido fica a esquerda, o novo irmao a direita
+	}
+	filhos[indiceDoFilho + 1] = novoIrmao; //o filho que foi dividido fica a esquerda, o novo irmao a direita
+
+	for (int j = qtdChavesAtuais - 1; j >= indiceDoFilho; j--) { //segue a mesma ideia da parte de cima, mas ao inves de colocar os enderecos da esquerda e direita, coloca o numero que subiu
+		chaves[j + 1] = chaves[j]; //ou seja, se o pai antes era so o numero 80, agora ele abre espaco pra um 30, os filhos de 30 ja tem espaco na caixa de enderecos do pai, mas precisamos abrir espaco pro proprio 30
+	}
+	chaves[indiceDoFilho] = filho->chaves[meio]; //a chave do meio sobe para o pai, ou seja, o numero 30 sobe para o pai, e o filho que foi dividido fica a esquerda, o novo irmao a direita
+
+	qtdChavesAtuais++; //o pai ganha a chave promovida
+}
+
+int NodoArvoreB::encontrarChave(int chaveDesejada) {
+	int idx = 0;
+
+	//caminha para a direita enquanto as chaves forem menores que a desejada
+	while (idx < qtdChavesAtuais && chaves[idx] < chaveDesejada) {
+		idx++; //faz uma micro busca, o idx vai parar no indice da chave desejada, ou no indice onde ela deveria estar se fosse inserida, ou seja, o primeiro numero maior que a chave desejada
+	} //ele busca o endereco da chave desejada, se nao tiver ali, diz onde ela devia estar
+
+	return idx;
+}
+
+void NodoArvoreB::remover(int chaveParaRemover) {//procura e chama os responsaveis
+	int idx = encontrarChave(chaveParaRemover);
+
+	if (idx < qtdChavesAtuais && chaves[idx] == chaveParaRemover) {
+		if (isFolha) {
+			removerDaFolha(idx);
+		}
+		else {
+			removerDeNaoFolha(idx);
+		}
+	}
+	else {
+		if (isFolha) {
+			return;
+		}
+
+		bool flagUltimoFilho = (idx == qtdChavesAtuais);
+
+		if (filhos[idx]->qtdChavesAtuais <= ordem) {
+			preencher(idx);
+		}
+
+		if (flagUltimoFilho && idx > qtdChavesAtuais) {
+			filhos[idx - 1]->remover(chaveParaRemover);
+		}
+		else {
+			filhos[idx]->remover(chaveParaRemover);
+		}
+	}
+}
+
+void NodoArvoreB::removerDaFolha(int indice) {
+	for (int i = indice + 1; i < qtdChavesAtuais; ++i) {
+		chaves[i - 1] = chaves[i];
+	}
+	qtdChavesAtuais--;
+}
+
+int NodoArvoreB::obterAntecessor(int indice) { //maior dos menores
+	NodoArvoreB* atual = filhos[indice];
+
+	while (!atual->isFolha) {
+		atual = atual->filhos[atual->qtdChavesAtuais];
+	}
+
+	return atual->chaves[atual->qtdChavesAtuais - 1];
+}
+
+int NodoArvoreB::obterSucessor(int indice) { //menor dos maiores
+	NodoArvoreB* atual = filhos[indice + 1];
+
+	while (!atual->isFolha) {
+		atual = atual->filhos[0];
+	}
+
+	return atual->chaves[0];
+}
+void NodoArvoreB::removerDeNaoFolha(int indice) {
+	int chaveAlvo = chaves[indice];
+
+	// filho da esquerda rico
+	if (filhos[indice]->qtdChavesAtuais >= ordem) {
+		int antecessor = obterAntecessor(indice);
+		chaves[indice] = antecessor;          
+		filhos[indice]->remover(antecessor);
+	}
+	//filho da esquerda é pobre, mas o da direita é rico
+	else if (filhos[indice + 1]->qtdChavesAtuais >= ordem) {
+		int sucessor = obterSucessor(indice);
+		chaves[indice] = sucessor;
+		filhos[indice + 1]->remover(sucessor);
+	}
+	//tudo pobre
+	else {
+		fundirNodos(indice);//junta o filhoesq, alvo e filhodir
+		filhos[indice]->remover(chaveAlvo);
+	}
+}
+
+void NodoArvoreB::preencher(int indice) { //merge
+	//garante que não é primeiro filho e verifica se irmao da esq é rico
+	if (indice != 0 && filhos[indice - 1]->qtdChavesAtuais > ordem) {
+		pegarEmprestadoAnterior(indice);
+	}
+	//vê se o irmao da dir é rico
+	else if (indice != qtdChavesAtuais && filhos[indice + 1]->qtdChavesAtuais > ordem) {
+		pegarEmprestadoProximo(indice);
+	}
+	//os dois sao pobres, teremos que fazer o merge
+	else {
+		//se nao for o ultimo da direita, funde com o irmao da dir
+		if (indice != qtdChavesAtuais) {
+			fundirNodos(indice);
+		}
+		else {
+			fundirNodos(indice - 1);
+		}
+	}
+}
+
+//rotação à direita
+void NodoArvoreB::pegarEmprestadoAnterior(int indice) {
+	NodoArvoreB* filho = filhos[indice];//com underflow
+	NodoArvoreB* irmao = filhos[indice - 1];//irmao rico
+
+	//filho c underflow move pra abrir espaço
+	for (int i = filho->qtdChavesAtuais - 1; i >= 0; --i) {
+		filho->chaves[i + 1] = filho->chaves[i];
+	}
+
+	//também precisa empurrar os ponteiros dos filhos
+	if (!filho->isFolha) {
+		for (int i = filho->qtdChavesAtuais; i >= 0; --i) {
+			filho->filhos[i + 1] = filho->filhos[i];
+		}
+	}
+
+	//chave pai desce e vira filho
+	filho->chaves[0] = chaves[indice - 1];
+
+	//ponteiro que estava na direita da chave que vai subir, agora fica na esquerda da chave que desceu
+	if (!filho->isFolha) {
+		filho->filhos[0] = irmao->filhos[irmao->qtdChavesAtuais];
+	}
+
+	//maior dos menores sobe
+	chaves[indice - 1] = irmao->chaves[irmao->qtdChavesAtuais - 1];
+
+	filho->qtdChavesAtuais++;
+	irmao->qtdChavesAtuais--;
+}
+
+//rotação à esquerda
+void NodoArvoreB::pegarEmprestadoProximo(int indice) {
+	NodoArvoreB* filho = filhos[indice]; //c underflow
+	NodoArvoreB* irmao = filhos[indice + 1]; //irmao rico na esq
+
+	//pai desce
+	filho->chaves[filho->qtdChavesAtuais] = chaves[indice];
+
+	//ponteiro que estava na esq da chave que vai subir, agora fica à direita da chave que desceu
+	if (!filho->isFolha) {
+		filho->filhos[filho->qtdChavesAtuais + 1] = irmao->filhos[0];
+	}
+
+	//menor chave do irmao rico sobe
+	chaves[indice] = irmao->chaves[0];
+
+	//organiza a ordem pq o menor saiu
+	for (int i = 1; i < irmao->qtdChavesAtuais; ++i) {
+		irmao->chaves[i - 1] = irmao->chaves[i];
+	}
+
+	if (!irmao->isFolha) {
+		for (int i = 1; i <= irmao->qtdChavesAtuais; ++i) {
+			irmao->filhos[i - 1] = irmao->filhos[i];
+		}
+	}
+
+	filho->qtdChavesAtuais++;
+	irmao->qtdChavesAtuais--;
+}
+
+void NodoArvoreB::fundirNodos(int indice) {
+	NodoArvoreB* filhoEsq = filhos[indice];//filho que vai chamar geral junto
+	NodoArvoreB* filhoDir = filhos[indice + 1];//filho q sera deletado
+
+	////chave do pai se junta ao filho da esq
+	filhoEsq->chaves[filhoEsq->qtdChavesAtuais] = chaves[indice];
+
+	//filho da esquerda copia todas as chaves do irmão da direita
+	for (int i = 0; i < filhoDir->qtdChavesAtuais; ++i) {
+		filhoEsq->chaves[filhoEsq->qtdChavesAtuais + 1 + i] = filhoDir->chaves[i];
+	}
+
+	//se não forem folhas, o filho da esquerda também adota todos os netos do irmão da direita
+	if (!filhoEsq->isFolha) {
+		for (int i = 0; i <= filhoDir->qtdChavesAtuais; ++i) {
+			filhoEsq->filhos[filhoEsq->qtdChavesAtuais + 1 + i] = filhoDir->filhos[i];
+		}
+	}
+
+	//ajusta as chaves do pai pq uma chave desceu
+	for (int i = indice + 1; i < qtdChavesAtuais; ++i) {
+		chaves[i - 1] = chaves[i];
+	}
+
+	//ajusta os ponteiros do pai
+	for (int i = indice + 2; i <= qtdChavesAtuais; ++i) {
+		filhos[i - 1] = filhos[i];
+	}
+
+	//filho da esquerda ganha as chaves do irmão + a chave do pai que desceu (+1)
+	filhoEsq->qtdChavesAtuais += filhoDir->qtdChavesAtuais + 1;
+	qtdChavesAtuais--; // O pai perdeu uma chave
+
+	delete filhoDir;
+}

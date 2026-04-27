@@ -1,0 +1,4 @@
+digraph ArvoreB {
+  node [shape=record];
+  node000001B6C1CC0FD0 [label="<f0> 20 | <f1> 30 | <f2> 40 | <f3> 50"];
+}
