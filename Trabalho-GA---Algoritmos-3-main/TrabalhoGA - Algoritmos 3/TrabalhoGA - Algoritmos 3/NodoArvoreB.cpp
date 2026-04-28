@@ -13,19 +13,19 @@ NodoArvoreB::NodoArvoreB(int ordemDaArvore, bool NodoIsFolha) {
 
 NodoArvoreB* NodoArvoreB::buscar(int chaveDesejada) {
 	int i = 0;
-	while (i < qtdChavesAtuais && chaveDesejada > chaves[i]) {
-		i++;
+	while (i < qtdChavesAtuais && chaveDesejada > chaves[i]) { //entra na primeira "sala", enquanto o numero registrado for menor que a chave desejada
+		i++; //ele continua para a direita, ou seja, pra proxima chave
 	}
 
 	if (i < qtdChavesAtuais && chaves[i] == chaveDesejada) {
-		return this; // A chave foi encontrada neste nodo
+		return this; //a chave foi encontrada neste nodo, retorna o endereço do nodo onde a chave está
 	}
 
 	if (isFolha == true) {
 		return nullptr; //chegou no fim e não encontrou a chave;
 	}
 
-	return filhos[i]->buscar(chaveDesejada); // Continua a busca no filho apropriado
+	return filhos[i]->buscar(chaveDesejada); //continua a busca no filho apropriado
 }
 
 void NodoArvoreB::imprimirEmOrdem() {
@@ -36,7 +36,7 @@ void NodoArvoreB::imprimirEmOrdem() {
 		}
 		cout << chaves[i] << " "; 
 	}
-	// Imprime o último filho à direita
+	//imprime o último filho à direita
 	if (isFolha == false) {
 		filhos[i]->imprimirEmOrdem();
 	}
@@ -354,7 +354,7 @@ void NodoArvoreB::fundirNodos(int indice) {
 
 	//filho da esquerda ganha as chaves do irmão + a chave do pai que desceu (+1)
 	filhoEsq->qtdChavesAtuais += filhoDir->qtdChavesAtuais + 1;
-	qtdChavesAtuais--; // O pai perdeu uma chave
+	qtdChavesAtuais--; //o pai perdeu uma chave
 
 	delete filhoDir;
 }

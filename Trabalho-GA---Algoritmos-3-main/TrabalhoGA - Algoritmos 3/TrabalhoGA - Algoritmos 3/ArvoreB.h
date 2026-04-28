@@ -4,7 +4,7 @@
 #include "NodoArvoreB.h"
 using namespace std;
 
-// Classe principal da Árvore B
+//classe principal da Árvore B ela que chama as funcoes de nodo pra fazer as operacoes
 class ArvoreB {
 public:
 	NodoArvoreB* raiz; //endereco de memoria que guarda um objeto da classe NodoArvoreB, que representa a pagina raiz da arvore
@@ -12,7 +12,7 @@ public:
 
     ArvoreB(int ordemDaArvore);
 
-    // Funções públicas que você chamará na sua main()
+    //funcoes publicas que voce chamara na sua main()
     void imprimirPreOrdem();
     void imprimirEmOrdem();
     void imprimirPosOrdem();

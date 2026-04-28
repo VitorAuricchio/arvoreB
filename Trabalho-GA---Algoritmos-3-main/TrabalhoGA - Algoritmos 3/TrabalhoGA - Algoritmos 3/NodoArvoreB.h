@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
-#include <fstream> // Necessário para gerar o arquivo .dot do Graphviz
+#include <fstream> //Necessrio para gerar o arquivo .dot do Graphviz
 
 using namespace std;
 
-// Classe que representa uma página (nodo) da Árvore B
+//classe que representa uma pagina (nodo) da Árvore B
 class NodoArvoreB {
 public:
     int* chaves;
